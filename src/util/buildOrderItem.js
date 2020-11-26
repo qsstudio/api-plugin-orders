@@ -70,6 +70,7 @@ export default async function buildOrderItem(context, { currencyCode, inputItem,
     addedAt: addedAt || now,
     attributes,
     createdAt: now,
+    metafields: chosenProduct.metafields,
     optionTitle: chosenVariant && chosenVariant.optionTitle,
     parcel: chosenVariant.parcel,
     price: {
