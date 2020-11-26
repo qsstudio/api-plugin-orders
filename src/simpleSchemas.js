@@ -706,6 +706,13 @@ export const OrderItem = new SimpleSchema({
   "history.$": {
     type: History
   },
+  "metafields": {
+    type: Array,
+    optional: true
+  },
+  "metafields.$": {
+    type: Metafield
+  },
   "optionTitle": {
     type: String,
     optional: true
