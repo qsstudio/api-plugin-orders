@@ -6,15 +6,20 @@ import ReactionError from "@reactioncommerce/reaction-error";
 import getAnonymousAccessToken from "@reactioncommerce/api-utils/getAnonymousAccessToken.js";
 import buildOrderFulfillmentGroupFromInput from "../util/buildOrderFulfillmentGroupFromInput.js";
 import verifyPaymentsMatchOrderTotal from "../util/verifyPaymentsMatchOrderTotal.js";
-import { Order as OrderSchema, orderInputSchema, Payment as PaymentSchema, paymentInputSchema } from "../simpleSchemas.js";
+import {
+  Order as OrderSchema,
+  orderInputSchema,
+  Payment as PaymentSchema,
+  paymentInputSchema,
+} from "../simpleSchemas.js";
 
 const inputSchema = new SimpleSchema({
-  "order": orderInputSchema,
-  "payments": {
+  order: orderInputSchema,
+  payments: {
     type: Array,
-    optional: true
+    optional: true,
   },
-  "payments.$": paymentInputSchema
+  "payments.$": paymentInputSchema,
 });
 
 /**
@@ -39,7 +44,7 @@ async function createPayments({
   orderTotal,
   paymentsInput,
   shippingAddress,
-  shop
+  shop,
 }) {
   // Determining which payment methods are enabled for the shop
   const availablePaymentMethods = shop.availablePaymentMethods || [];
@@ -54,37 +59,48 @@ async function createPayments({
 
     // Verify that this payment method is enabled for the shop
     if (!availablePaymentMethods.includes(methodName)) {
-      throw new ReactionError("payment-failed", `Payment method not enabled for this shop: ${methodName}`);
+      throw new ReactionError(
+        "payment-failed",
+        `Payment method not enabled for this shop: ${methodName}`
+      );
     }
 
     // Grab config for this payment method
     let paymentMethodConfig;
     try {
-      paymentMethodConfig = context.queries.getPaymentMethodConfigByName(methodName);
+      paymentMethodConfig = context.queries.getPaymentMethodConfigByName(
+        methodName
+      );
     } catch (error) {
       Logger.error(error);
-      throw new ReactionError("payment-failed", `Invalid payment method name: ${methodName}`);
+      throw new ReactionError(
+        "payment-failed",
+        `Invalid payment method name: ${methodName}`
+      );
     }
 
     // Authorize this payment
-    const payment = await paymentMethodConfig.functions.createAuthorizedPayment(context, {
-      accountId, // optional
-      amount,
-      billingAddress: paymentInput.billingAddress || billingAddress,
-      currencyCode,
-      email,
-      shippingAddress, // optional, for fraud detection, the first shipping address if shipping to multiple
-      shopId: shop._id,
-      paymentData: {
-        ...(paymentInput.data || {})
-      } // optional, object, blackbox
-    });
+    const payment = await paymentMethodConfig.functions.createAuthorizedPayment(
+      context,
+      {
+        accountId, // optional
+        amount,
+        billingAddress: paymentInput.billingAddress || billingAddress,
+        currencyCode,
+        email,
+        shippingAddress, // optional, for fraud detection, the first shipping address if shipping to multiple
+        shopId: shop._id,
+        paymentData: {
+          ...(paymentInput.data || {}),
+        }, // optional, object, blackbox
+      }
+    );
 
     const paymentWithCurrency = {
       ...payment,
       // This is from previous support for exchange rates, which was removed in v3.0.0
       currency: { exchangeRate: 1, userCurrency: currencyCode },
-      currencyCode
+      currencyCode,
     };
 
     PaymentSchema.validate(paymentWithCurrency);
@@ -98,7 +114,10 @@ async function createPayments({
     payments = payments.filter((payment) => !!payment); // remove nulls
   } catch (error) {
     Logger.error("createOrder: error creating payments", error.message);
-    throw new ReactionError("payment-failed", `There was a problem authorizing this payment: ${error.message}`);
+    throw new ReactionError(
+      "payment-failed",
+      `There was a problem authorizing this payment: ${error.message}`
+    );
   }
 
   return payments;
@@ -124,9 +143,15 @@ export default async function placeOrder(context, input) {
     email,
     fulfillmentGroups,
     ordererPreferredLanguage,
-    shopId
+    shopId,
   } = orderInput;
-  const { accountId, appEvents, collections, getFunctionsOfType, userId } = context;
+  const {
+    accountId,
+    appEvents,
+    collections,
+    getFunctionsOfType,
+    userId,
+  } = context;
   const { Orders, Cart } = collections;
 
   const shop = await context.queries.shopById(context, shopId);
@@ -140,10 +165,12 @@ export default async function placeOrder(context, input) {
   if (cartId) {
     cart = await Cart.findOne({ _id: cartId });
     if (!cart) {
-      throw new ReactionError("not-found", "Cart not found while trying to place order");
+      throw new ReactionError(
+        "not-found",
+        "Cart not found while trying to place order"
+      );
     }
   }
-
 
   // We are mixing concerns a bit here for now. This is for backwards compatibility with current
   // discount codes feature. We are planning to revamp discounts soon, but until then, we'll look up
@@ -151,7 +178,10 @@ export default async function placeOrder(context, input) {
   let discounts = [];
   let discountTotal = 0;
   if (cart) {
-    const discountsResult = await context.queries.getDiscountsTotalForCart(context, cart);
+    const discountsResult = await context.queries.getDiscountsTotalForCart(
+      context,
+      cart
+    );
     ({ discounts } = discountsResult);
     discountTotal = discountsResult.total;
   }
@@ -163,35 +193,40 @@ export default async function placeOrder(context, input) {
   // Create orderId
   const orderId = Random.id();
 
-
   // Add more props to each fulfillment group, and validate/build the items in each group
   let orderTotal = 0;
   let shippingAddressForPayments = null;
-  const finalFulfillmentGroups = await Promise.all(fulfillmentGroups.map(async (inputGroup) => {
-    const { group, groupSurcharges } = await buildOrderFulfillmentGroupFromInput(context, {
-      accountId,
-      billingAddress,
-      cartId,
-      currencyCode,
-      discountTotal,
-      inputGroup,
-      orderId,
-      cart
-    });
+  const finalFulfillmentGroups = await Promise.all(
+    fulfillmentGroups.map(async (inputGroup) => {
+      const {
+        group,
+        groupSurcharges,
+      } = await buildOrderFulfillmentGroupFromInput(context, {
+        accountId,
+        billingAddress,
+        cartId,
+        currencyCode,
+        discountTotal,
+        inputGroup,
+        orderId,
+        cart,
+      });
 
-    // We save off the first shipping address found, for passing to payment services. They use this
-    // for fraud detection.
-    if (group.address && !shippingAddressForPayments) shippingAddressForPayments = group.address;
+      // We save off the first shipping address found, for passing to payment services. They use this
+      // for fraud detection.
+      if (group.address && !shippingAddressForPayments)
+        shippingAddressForPayments = group.address;
 
-    // Push all group surcharges to overall order surcharge array.
-    // Currently, we do not save surcharges per group
-    orderSurcharges.push(...groupSurcharges);
+      // Push all group surcharges to overall order surcharge array.
+      // Currently, we do not save surcharges per group
+      orderSurcharges.push(...groupSurcharges);
 
-    // Add the group total to the order total
-    orderTotal += group.invoice.total;
+      // Add the group total to the order total
+      orderTotal += group.invoice.total;
 
-    return group;
-  }));
+      return group;
+    })
+  );
 
   const payments = await createPayments({
     accountId,
@@ -202,7 +237,7 @@ export default async function placeOrder(context, input) {
     orderTotal,
     paymentsInput,
     shippingAddress: shippingAddressForPayments,
-    shop
+    shop,
   });
 
   // Create anonymousAccessToken if no account ID
@@ -224,12 +259,15 @@ export default async function placeOrder(context, input) {
     shipping: finalFulfillmentGroups,
     shopId,
     surcharges: orderSurcharges,
-    totalItemQuantity: finalFulfillmentGroups.reduce((sum, group) => sum + group.totalItemQuantity, 0),
+    totalItemQuantity: finalFulfillmentGroups.reduce(
+      (sum, group) => sum + group.totalItemQuantity,
+      0
+    ),
     updatedAt: now,
     workflow: {
       status: "new",
-      workflow: ["new"]
-    }
+      workflow: ["new"],
+    },
   };
 
   if (fullToken) {
@@ -240,8 +278,10 @@ export default async function placeOrder(context, input) {
   }
 
   let referenceId;
+  /*
   const createReferenceIdFunctions = getFunctionsOfType("createOrderReferenceId");
   if (!createReferenceIdFunctions || createReferenceIdFunctions.length === 0) {
+    
     // if the cart has a reference Id, and no custom function is created use that
     if (_.get(cart, "referenceId")) { // we want the else to fallthrough if no cart to keep the if/else logic simple
       ({ referenceId } = cart);
@@ -257,12 +297,17 @@ export default async function placeOrder(context, input) {
       Logger.warn("More than one createOrderReferenceId function defined. Using first one defined");
     }
   }
+  */
+
+  const ordersLength = Orders.count([]);
+  referenceId = ++ordersLength;
 
   order.referenceId = referenceId;
 
-
   // Apply custom order data transformations from plugins
-  const transformCustomOrderFieldsFuncs = getFunctionsOfType("transformCustomOrderFields");
+  const transformCustomOrderFieldsFuncs = getFunctionsOfType(
+    "transformCustomOrderFields"
+  );
   if (transformCustomOrderFieldsFuncs.length > 0) {
     let customFields = { ...(customFieldsFromClient || {}) };
     // We need to run each of these functions in a series, rather than in parallel, because
@@ -270,7 +315,11 @@ export default async function placeOrder(context, input) {
     // eslint rules when the output of one iteration might be used as input in another iteration, such as this case here.
     // See https://eslint.org/docs/rules/no-await-in-loop#when-not-to-use-it
     for (const transformCustomOrderFieldsFunc of transformCustomOrderFieldsFuncs) {
-      customFields = await transformCustomOrderFieldsFunc({ context, customFields, order }); // eslint-disable-line no-await-in-loop
+      customFields = await transformCustomOrderFieldsFunc({
+        context,
+        customFields,
+        order,
+      }); // eslint-disable-line no-await-in-loop
     }
     order.customFields = customFields;
   } else {
@@ -286,6 +335,6 @@ export default async function placeOrder(context, input) {
   return {
     orders: [order],
     // GraphQL response gets the raw token
-    token: fullToken && fullToken.token
+    token: fullToken && fullToken.token,
   };
 }
