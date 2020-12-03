@@ -302,6 +302,7 @@ export default async function placeOrder(context, input) {
   const ordersLength = Orders.count([]);
   referenceId = baseNumber + ordersLength;
 
+  console.log("Reference ID created", referenceId);
   order.referenceId = referenceId;
 
   // Apply custom order data transformations from plugins
