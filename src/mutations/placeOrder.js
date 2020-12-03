@@ -301,6 +301,7 @@ export default async function placeOrder(context, input) {
   let referenceIdNumber;
   const baseNumber = 1234;
   const maxOrderNo = await Orders.find().sort({ referenceId: -1 }).limit(1);
+  console.log("max order no", maxOrderNo);
 
   if (maxOrderNo.length === 0) {
     referenceIdNumber = baseNumber;
