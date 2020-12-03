@@ -299,8 +299,16 @@ export default async function placeOrder(context, input) {
   }
   */
   const baseNumber = 1234;
-  const ordersLength = Orders.count([]);
-  referenceId = baseNumber + ordersLength;
+  const maxRefNumberArray = Orders.find({}, { referenceId: 1, _id: 0 })
+    .sort({ referenceId: -1 })
+    .limit(1);
+  const maxRefNumber = maxRefNumberArray[0].referenceId;
+
+  if (maxRefNumber < 1234 || typeof maxRefNumber === "string") {
+    referenceId = baseNumber;
+  } else {
+    referenceId = baseNumber + maxRefNumber;
+  }
 
   console.log("Reference ID created", referenceId);
   order.referenceId = referenceId;
