@@ -299,17 +299,10 @@ export default async function placeOrder(context, input) {
   }
   */
   const baseNumber = 1234;
-  const noOfOrders = await Orders.countDocuments();
+  const maxOrderNo = await  Orders.find().sort({ "referenceId": -1 }).limit(1);
 
-  let referenceIdNumber = baseNumber + noOfOrders;
-  do {
-    ++referenceIdNumber;
-    referenceId = referenceIdNumber.toString();
-  } while (
-    (await Orders.find({ referenceId: referenceId }, { _id: 1 })
-      .limit(1)
-      .count()) > 0
-  );
+  let referenceIdNumber = baseNumber + parseInt(maxOrderNo[0]["referenceId"]);
+  referenceId = referenceIdNumber.toString()
 
   console.log("Reference ID created", referenceId);
   order.referenceId = referenceId;
