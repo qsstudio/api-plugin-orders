@@ -298,9 +298,9 @@ export default async function placeOrder(context, input) {
     }
   }
   */
-
+  const baseNumber = 1234;
   const ordersLength = Orders.count([]);
-  referenceId = ++ordersLength;
+  referenceId = baseNumber + ordersLength;
 
   order.referenceId = referenceId;
 
