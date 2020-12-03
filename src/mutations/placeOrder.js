@@ -305,7 +305,8 @@ export default async function placeOrder(context, input) {
   if (maxOrderNo.length === 0) {
     referenceIdNumber = baseNumber;
   } else {
-    referenceIdNumber = parseInt(maxOrderNo[0]["referenceId"]) + 1;
+    referenceIdNumber =
+      maxOrderNumber && parseInt(maxOrderNo[0]["referenceId"]) + 1;
   }
 
   referenceId = referenceIdNumber.toString();
