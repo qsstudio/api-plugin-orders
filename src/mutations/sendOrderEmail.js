@@ -89,7 +89,8 @@ export default async function sendOrderEmail(context, input) {
   }
 
   let template = '';
-  if (templateName === 'orders/shipped') {
+  if (dataForEmail.order.workflow.status === "coreOrderWorkflow/processing" && shipping && shipping[0] && shipping[0].tracking) {
+    // send email if status is processing and tracking number exists
     template = 'orderShipped';
   } else if (templateName === 'orders/new') {
     template = 'orderConfirmed';
@@ -115,7 +116,7 @@ export default async function sendOrderEmail(context, input) {
     }
 
 
-  if (templateName === 'orders/shipped' || templateName === 'orders/new') {
+  if (template !== '') {
     axios.post(
       'https://mq7b29mtd5.execute-api.ap-southeast-2.amazonaws.com/production/api/sendEmail',
       fullEmailData,
