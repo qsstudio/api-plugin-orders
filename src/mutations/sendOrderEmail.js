@@ -114,7 +114,13 @@ export default async function sendOrderEmail(context, input) {
 
 
   if (templateName === 'orders/shipped' || templateName === 'orders/new') {
-    axios.post('https://mq7b29mtd5.execute-api.ap-southeast-2.amazonaws.com/production/api/sendEmail', fullEmailData)
+    axios.post(
+      'https://mq7b29mtd5.execute-api.ap-southeast-2.amazonaws.com/production/api/sendEmail',
+      fullEmailData,
+      {
+        headers: { origin: 'https://askbella.com.au' }
+      }
+    )
     .then(function (response) {
       console.log(response);
     })
