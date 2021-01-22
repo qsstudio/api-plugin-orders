@@ -1,7 +1,7 @@
 import SimpleSchema from "simpl-schema";
 import axios from "axios";
 
-const inputSchema = new SimpleYSchema({
+const inputSchema = new SimpleSchema({
   action: {
     type: String,
     optional: true
