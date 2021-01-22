@@ -1,7 +1,7 @@
 import SimpleSchema from "simpl-schema";
 import axios from "axios";
 
-const inputSchema = new SimpleSchema({
+const inputSchema = new SimpleYSchema({
   action: {
     type: String,
     optional: true
@@ -76,10 +76,15 @@ export default async function sendOrderEmail(context, input) {
         }}),
       "shipping_handling_cost": "$" + shipping[0].invoice.shipping.toFixed(2), // "$" + shipping[0].invoice.shipping.toFixed(2)
       "sub_total_cost": "$" + shipping[0].invoice.subtotal.toFixed(2), // "$" + shipping[0].invoice.subtotal.toFixed(2)
-      "promo_discount": "$" + discounts[0].amount.toFixed(2), // We just have discount amount not the title 
       "total_cost": "$" + shipping[0].invoice.total.toFixed(2), // "$" + shipping[0].invoice.total.toFixed(2)
-      "tracking_number": shipping[0].tracking || ""
     }
+  if (discounts && discounts[0] && discounts[0].amount) {
+    emailData.promo_discount = "$" + discounts[0].amount.toFixed(2); // We just have discount amount not the title 
+  }
+
+  if (shipping && shipping[0] && shipping[0].tracking) {
+    emailData.tracking_number = shipping[0].tracking;
+  }
 
   let template = '';
   if (templateName === 'orders/shipped') {
