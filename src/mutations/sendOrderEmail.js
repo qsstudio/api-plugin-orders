@@ -97,8 +97,8 @@ export default async function sendOrderEmail(context, input) {
       template: template,
       templateVars: { 
         to: {
-          email: shipping[0].address.fullName,
-          name: order.email,
+          email: order.email,
+          name: shipping[0].address.fullName,
         },
         from: {
           email: "orders@askbella.com.au",
