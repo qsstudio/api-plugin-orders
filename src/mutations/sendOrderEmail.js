@@ -67,6 +67,7 @@ export default async function sendOrderEmail(context, input) {
       "order_date": order.updatedAt, // order.createdAt OR updatedAt (will need to change the format)
       "contact_number": shipping[0].address.phone, // shipping[0].address.phone
       "billing_address": payments[0].address.address1, //payments[0].address.address1
+      "billing_address_2": `${payments[0].address.city} ${payments[0].address.region} ${payments[0].address.postal}`, //shipping[0].address.address1
       "shipping_method": shipping[0].shipmentMethod.label, // shipping[0].shipmentMethod.label
       "payment_method": payments[0].displayName, // payment[0].displayName (will need to change the format perhaps)
       "product": shipping[0].items.map(item=> {
