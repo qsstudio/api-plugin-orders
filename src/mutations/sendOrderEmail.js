@@ -1,5 +1,5 @@
 import SimpleSchema from "simpl-schema";
-
+const axios = require('axios');
 
 const inputSchema = new SimpleSchema({
   action: {
