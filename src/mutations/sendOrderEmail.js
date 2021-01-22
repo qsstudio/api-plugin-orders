@@ -62,6 +62,7 @@ export default async function sendOrderEmail(context, input) {
   let emailData = {
       "full_name": shipping[0].address.fullName, // shipping[0].address.fullName
       "shipping_address": shipping[0].address.address1, //shipping[0].address.address1
+      "shipping_address_2": `${shipping[0].address.city} ${shipping[0].address.region} ${shipping[0].address.postal}`, //shipping[0].address.address1
       "order_number": order.referenceId, // order.referenceId
       "order_date": order.updatedAt, // order.createdAt OR updatedAt (will need to change the format)
       "contact_number": shipping[0].address.phone, // shipping[0].address.phone
