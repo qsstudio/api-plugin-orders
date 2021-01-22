@@ -1,5 +1,6 @@
 import SimpleSchema from "simpl-schema";
 
+
 const inputSchema = new SimpleSchema({
   action: {
     type: String,
@@ -76,16 +77,52 @@ export default async function sendOrderEmail(context, input) {
       "shipping_handling_cost": "$" + shipping[0].invoice.shipping.toFixed(2), // "$" + shipping[0].invoice.shipping.toFixed(2)
       "sub_total_cost": "$" + shipping[0].invoice.subtotal.toFixed(2), // "$" + shipping[0].invoice.subtotal.toFixed(2)
       "promo_discount": "$" + discounts[0].amount.toFixed(2), // We just have discount amount not the title 
-      "total_cost": "$" + shipping[0].invoice.total.toFixed(2) // "$" + shipping[0].invoice.total.toFixed(2)
+      "total_cost": "$" + shipping[0].invoice.total.toFixed(2), // "$" + shipping[0].invoice.total.toFixed(2)
+      "tracking_number": shipping[0].tracking || ""
     }
 
+  let template = '';
+  if (templateName === 'orders/shipped') {
+    template = 'orderShipped';
+  } else if (templateName === 'orders/new') {
+    template = 'orderConfirmed';
+  }
+
+  let fullEmailData = {
+      template: template,
+      templateVars: { 
+        to: {
+          email: shipping[0].address.fullName,
+          name: order.email,
+        },
+        from: {
+          email: "orders@askbella.com.au",
+          name: "askbella",
+        },
+        replyTo: {
+          email: "orders@askbella.com.au",
+          name: "askbella",
+        },
+        dynamicData: emailData
+      }
+    }
+
+
   if (templateName === 'orders/shipped' || templateName === 'orders/new') {
-    await context.mutations.sendEmail(context, {
-      data: emailData,
-      fromShop,
-      templateName,
-      language,
-      to
+    axios.post('https://mq7b29mtd5.execute-api.ap-southeast-2.amazonaws.com/production/api/sendEmail', fullEmailData)
+    .then(function (response) {
+      console.log(response);
+    })
+    .catch(function (error) {
+      console.log(error);
     });
+
+    // await context.mutations.sendEmail(context, {
+    //   data: emailData,
+    //   fromShop,
+    //   templateName,
+    //   language,
+    //   to
+    // });
   }
 }
