@@ -61,7 +61,7 @@ export default async function sendOrderEmail(context, input) {
   const { order } = dataForEmail;
   const { shipping, payments, discounts } = order;
   let emailData = {
-    first_name: shipping[0].address.fullName.split(" ")[0],
+    first_name: shipping[0].address.metafields[0].value, //shipping[0].address.fullName.split(" ")[0]
     full_name: shipping[0].address.fullName, // shipping[0].address.fullName
     shipping_address: shipping[0].address.address1, //shipping[0].address.address1
     shipping_address_2: `${shipping[0].address.city} ${shipping[0].address.region} ${shipping[0].address.postal}`, //shipping[0].address.address1
