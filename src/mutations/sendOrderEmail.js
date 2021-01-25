@@ -35,15 +35,28 @@ export default async function sendOrderEmail(context, input) {
 
   const { action, dataForEmail, fromShop, language, to } = input;
 
-  const getImageUrl = (metafields) => {
-    const key = "productImage";
-    const s3Url =
-      "https://askbella-product-images.s3-ap-southeast-2.amazonaws.com/"; // env file?
+  const getMetafieldValue = (key, metafields) => {
     let value;
     metafields.forEach((m) => {
       if (m.key === key) value = m.value;
     });
-    return s3Url + value;
+    return value;
+  };
+
+  const getImageUrl = (metafields) => {
+    const key = "productImage";
+    const s3Url =
+      "https://askbella-product-images.s3-ap-southeast-2.amazonaws.com/"; // env file?
+
+    return s3Url + getMetafieldValue(key, metafields);
+  };
+
+  const getMetafieldValue = (key, metafields) => {
+    let value;
+    metafields.forEach((m) => {
+      if (m.key === key) value = m.value;
+    });
+    return value;
   };
 
   // Compile email
@@ -61,7 +74,11 @@ export default async function sendOrderEmail(context, input) {
   const { order } = dataForEmail;
   const { shipping, payments, discounts } = order;
   let emailData = {
-    first_name: shipping[0].address.metafields[0].value, //shipping[0].address.fullName.split(" ")[0]
+    first_name:
+      shipping[0].address.metafields.length > 0 &&
+      getMetafieldValue("first_name", shipping[0].address.metafields) // Edit the check according to how the metafield is stored
+        ? getMetafieldValue("first_name", shipping[0].address.metafields)
+        : shipping[0].address.fullName.split(" ")[0],
     full_name: shipping[0].address.fullName, // shipping[0].address.fullName
     shipping_address: shipping[0].address.address1, //shipping[0].address.address1
     shipping_address_2: `${shipping[0].address.city} ${shipping[0].address.region} ${shipping[0].address.postal}`, //shipping[0].address.address1
