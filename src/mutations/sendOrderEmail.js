@@ -51,14 +51,6 @@ export default async function sendOrderEmail(context, input) {
     return s3Url + getMetafieldValue(key, metafields);
   };
 
-  const getMetafieldValue = (key, metafields) => {
-    let value;
-    metafields.forEach((m) => {
-      if (m.key === key) value = m.value;
-    });
-    return value;
-  };
-
   // Compile email
   let templateName;
 
