@@ -54,6 +54,8 @@ export default async function sendOrderEmail(context, input) {
   // Compile email
   let templateName;
 
+  console.log('workflow status', dataForEmail.order.workflow.status);
+
   if (action === "shipped") {
     templateName = "orders/shipped";
   } else if (action === "refunded") {
@@ -67,6 +69,7 @@ export default async function sendOrderEmail(context, input) {
   const { shipping, payments, discounts } = order;
   let emailData = {
     first_name:
+      shipping[0].address.metafields &&
       shipping[0].address.metafields.length > 0 &&
       getMetafieldValue("first_name", shipping[0].address.metafields) // Edit the check according to how the metafield is stored
         ? getMetafieldValue("first_name", shipping[0].address.metafields)
